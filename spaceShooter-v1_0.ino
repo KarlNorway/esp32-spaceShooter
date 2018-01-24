@@ -11,26 +11,28 @@
 //      Tyler on GitHub: https://github.com/HailTheBDFL/
 //
 //          Hackerboxes: http://hackerboxes.com/
+//            
 //
 
 //=========================== setup ==============================================
-#include <Adafruit_GFX.h>
-#include <Adafruit_ILI9341.h>
+//#include <Adafruit_GFX.h>
+//#include <Adafruit_ILI9341.h>
+#include <M5Stack.h>
 
 //Display pins (current is default for HB0020 Badge)
-#define TFT_CS    19
-#define TFT_DC    22
-#define TFT_MOSI  23
-#define TFT_CLK   26
-#define TFT_RST   21
-#define TFT_MISO  25
+//#define TFT_CS    19
+//#define TFT_DC    22
+//#define TFT_MOSI  23
+//#define TFT_CLK   26
+//#define TFT_RST   21
+//#define TFT_MISO  25
 
 // NeoPixel Values
 #define PIXELPIN   5
 #define NUMPIXELS  5
 #define pixlux    20  //saturation level for NeoPixels colors
 
-Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC, TFT_MOSI, TFT_CLK, TFT_RST, TFT_MISO);
+//Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC, TFT_MOSI, TFT_CLK, TFT_RST, TFT_MISO);
 
 //============================= game variables =================================
 unsigned long offsetM = 0;
@@ -114,38 +116,46 @@ void setup() {
   memset(aFireY, 0, 5);
   memset(aFireAge, 0, 5);
   
-  tft.begin();
-  tft.setRotation(3);
-  tft.fillScreen(ILI9341_BLACK);
-  tft.setTextColor(0x5E85);
-  tft.setTextSize(4);
+  M5.begin();
+  M5.Lcd.setRotation(0);
+  M5.Lcd.fillScreen(ILI9341_BLACK);
+  M5.Lcd.setTextColor(0x5E85);
+  M5.Lcd.setTextSize(4);
 
   randomSeed(analogRead(6));
   
-  touchAttachInterrupt(27, left, threshold);  //Touch input
-  touchAttachInterrupt(12, right, threshold);
-  touchAttachInterrupt(13, down, threshold);
-  touchAttachInterrupt(14, up, threshold);
-  touchAttachInterrupt(15, select, threshold);
+//  touchAttachInterrupt(27, left, threshold);  //Touch input
+//  touchAttachInterrupt(12, right, threshold);
+//  touchAttachInterrupt(13, down, threshold);
+//  touchAttachInterrupt(14, up, threshold);
+//  touchAttachInterrupt(15, select, threshold);
+pinMode(BUTTON_A_PIN, INPUT_PULLUP);
+pinMode(BUTTON_B_PIN, INPUT_PULLUP);
+pinMode(BUTTON_C_PIN, INPUT_PULLUP);
 }
 
 void loop() {
+  
+  if(M5.BtnA.isPressed()){left();}
+  if(M5.BtnB.isPressed()){right();}
+  if(M5.BtnC.wasPressed()){select();}
+
   //-------------Start Screen--------------
   if (millis() - offsetS >= 900 and !beginGame) {
     if (!startPrinted) {
-      tft.setCursor(77, 105);
-      tft.print(">START<");
+      M5.Lcd.setCursor(77, 105);
+      M5.Lcd.print(">START<");
       startPrinted = true;
       offsetS = millis();
     }
     else {
-      tft.fillRect(77, 105, 244, 32, ILI9341_BLACK);
+      M5.Lcd.fillRect(77, 105, 244, 32, ILI9341_BLACK);
       startPrinted = false;
       offsetS = millis();
     }
   }
   if (beginGame and beginGame2) {
-    tft.fillRect(77, 105, 244, 32, ILI9341_BLACK);
+    M5.Lcd.fillRect(77, 105, 244, 32, ILI9341_BLACK);
     beginGame2 = false;
     play = true;
   }
@@ -155,7 +165,7 @@ void loop() {
     offsetM = millis();
   }
   if (oldShipX != shipX or oldShipY != shipY) {
-    tft.fillRect(oldShipX, oldShipY, 28, 44, ILI9341_BLACK);
+    M5.Lcd.fillRect(oldShipX, oldShipY, 28, 44, ILI9341_BLACK);
     oldShipX = shipX;
     oldShipY = shipY;
     drawBitmap(shipImg, shipImgW, shipImgH, shipX, shipY, 2);
@@ -200,7 +210,7 @@ void loop() {
     if (alienLive[i]) {
       alienLiveCount += 1;
       if (alienShot(i)) {
-        tft.fillRect(findOldAlienX(i), findOldAlienY(i), 28, 22, ILI9341_BLACK);
+        M5.Lcd.fillRect(findOldAlienX(i), findOldAlienY(i), 28, 22, ILI9341_BLACK);
         alienLiveCount -= 1;
         alienLive[i] = false;
         score += scoreInc;
@@ -222,6 +232,7 @@ void loop() {
   if (alienLiveCount == 0) {
     levelUp();
   }
+  M5.update();
 }
 
 //================================ functions ==================================================================
@@ -230,37 +241,37 @@ void gameOver() {
   if (doSplode) {
     drawBitmap(splodedImg, splodedImgW, splodedImgH, shipX, shipY, 2);
   }
-  tft.fillScreen(ILI9341_BLACK);
+  M5.Lcd.fillScreen(ILI9341_BLACK);
   drawScore(false);
   delay(1000);
-  tft.setCursor(17, 168);
-  tft.setTextSize(2);
-  tft.print("(Reset device to replay)");
+  M5.Lcd.setCursor(17, 168);
+  M5.Lcd.setTextSize(2);
+  M5.Lcd.print("(Reset device to replay)");
   while (true) {}
 }
 
 void drawScore(boolean win) {
-  tft.setCursor(53, 40);
-  tft.setTextColor(ILI9341_WHITE);
-  tft.setTextSize(4);
+  M5.Lcd.setCursor(53, 40);
+  M5.Lcd.setTextColor(ILI9341_WHITE);
+  M5.Lcd.setTextSize(4);
   if (win) {
-    tft.print("LEVEL UP!");
+    M5.Lcd.print("LEVEL UP!");
   }
   else {
-    tft.print("GAME OVER");
+    M5.Lcd.print("GAME OVER");
   }
   for (;millis() - offsetM <= 1000;)
-  tft.setCursor(59, 89);
-  tft.setTextSize(3);
-  tft.print("Score: ");
-  tft.print(score);
+  M5.Lcd.setCursor(59, 89);
+  M5.Lcd.setTextSize(3);
+  M5.Lcd.print("Score: ");
+  M5.Lcd.print(score);
   offsetM = millis();
 
   for (;millis() - offsetM <= 1000;) {
   }
-  tft.setCursor(71, 128);
-  tft.print("Level: ");
-  tft.print(level);
+  M5.Lcd.setCursor(71, 128);
+  M5.Lcd.print("Level: ");
+  M5.Lcd.print(level);
 }
 
 void levelUp() {
@@ -297,7 +308,7 @@ void levelUp() {
   
   for (unsigned long i = millis(); millis() - i <= 1600;) {
     if (millis() - offsetM >= 20) {
-      tft.fillRect(oldShipX, oldShipY, 28, 44, ILI9341_BLACK);
+      M5.Lcd.fillRect(oldShipX, oldShipY, 28, 44, ILI9341_BLACK);
       drawBitmap(shipImg, shipImgW, shipImgH, shipX, shipY, 2);
       drawBitmap(flamesImg, flamesImgW, flamesImgH, shipX + 1, shipY + 32, 2);
       oldShipX = shipX;
@@ -313,7 +324,7 @@ void levelUp() {
   shipY = 190;
   for (; millis() - offsetM <= 4000;) {
   }
-  tft.fillScreen(ILI9341_BLACK);
+  M5.Lcd.fillScreen(ILI9341_BLACK);
   offsetM = millis();
   play = true;
 }
@@ -353,7 +364,7 @@ boolean exceedBoundary(int num) {
 void moveAliens() {
   for (int i = 0; i < 18; i++) {
     if (alienLive[i]) {
-      tft.fillRect(findOldAlienX(i), findOldAlienY(i), 28, 22, ILI9341_BLACK);
+      M5.Lcd.fillRect(findOldAlienX(i), findOldAlienY(i), 28, 22, ILI9341_BLACK);
       drawBitmap(alienImg, alienImgW, alienImgH, findAlienX(i), findAlienY(i), 2);
     }
   }
@@ -394,20 +405,20 @@ void fireDaLazer() {
     fFireAge[bulletNo] = 1;
     fFireX[bulletNo] = shipX + 13;
     fFireY[bulletNo] = shipY - 4;
-    tft.fillRect(fFireX[bulletNo], fFireY[bulletNo], 4, 3, ILI9341_MAGENTA);
+    M5.Lcd.fillRect(fFireX[bulletNo], fFireY[bulletNo], 4, 3, ILI9341_MAGENTA);
   }
   fire = false;
 }
 
 void keepFirinDaLazer(int bulletNo) {
-  tft.fillRect(fFireX[bulletNo], fFireY[bulletNo], 4, 4, ILI9341_BLACK);
+  M5.Lcd.fillRect(fFireX[bulletNo], fFireY[bulletNo], 4, 4, ILI9341_BLACK);
   fFireY[bulletNo] -= 8;
-  tft.fillRect(fFireX[bulletNo], fFireY[bulletNo], 4, 4, ILI9341_MAGENTA);
+  M5.Lcd.fillRect(fFireX[bulletNo], fFireY[bulletNo], 4, 4, ILI9341_MAGENTA);
   fFireAge[bulletNo] += 1;
 }
 
 void stopFirinDaLazer(int bulletNo) {
-  tft.fillRect(fFireX[bulletNo], fFireY[bulletNo], 4, 4, ILI9341_BLACK);
+  M5.Lcd.fillRect(fFireX[bulletNo], fFireY[bulletNo], 4, 4, ILI9341_BLACK);
   fFireAge[bulletNo] = 0;
 }
 
@@ -419,7 +430,7 @@ void moveShip() {
     shipY += changeShipY;
   }
   if (oldShipX != shipX or oldShipY != shipY) {
-    tft.fillRect(oldShipX, oldShipY, 28, 44, ILI9341_BLACK);
+    M5.Lcd.fillRect(oldShipX, oldShipY, 28, 44, ILI9341_BLACK);
     oldShipX = shipX;
     oldShipY = shipY;
     drawBitmap(shipImg, shipImgW, shipImgH, shipX, shipY, 2);
@@ -447,10 +458,10 @@ void drawBitmap(char img[], int imgW, int imgH, int x, int y, int scale) {
       cellColor = 0x5E85;
     }
     if (curPix != 'Z' and scale == 1) {
-      tft.drawPixel(x + i % imgW, y + i / imgW, cellColor);
+      M5.Lcd.drawPixel(x + i % imgW, y + i / imgW, cellColor);
     }
     else if (curPix != 'Z' and scale > 1) {
-      tft.fillRect(x + scale*(i%imgW), y + scale*(i/imgW), scale, scale, cellColor);
+      M5.Lcd.fillRect(x + scale*(i%imgW), y + scale*(i/imgW), scale, scale, cellColor);
     }
   }
 }
